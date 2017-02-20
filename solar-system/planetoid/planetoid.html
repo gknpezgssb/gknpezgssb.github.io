@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <script src="../../utils/three.js"></script>
+  <script src="../../utils/orbitControls.js"></script>
+  <title>Document</title>
+  <link rel="stylesheet" href="../style/style.css">
+</head>
+
+<body>
+  <script>
+    var _width = window.innerWidth
+    var _height = window.innerHeight
+    var fov = 50
+    var aspect = _width / _height
+    var near = 1
+    var far = 2000
+    var camera, scene, renderer
+    var controls
+    var ambitLight, light1, light2
+    var speech = 0
+
+    stoneTexture = THREE.ImageUtils.loadTexture('../image/planetoid.jpg', {}, function() {
+      renderer.render(scene, camera);
+    })
+    stoneMaterial = new THREE.MeshLambertMaterial({
+      map: stoneTexture
+    })
+
+    function init() {
+      camera = new THREE.PerspectiveCamera(fov, aspect, near, far)
+      camera.position.set(0, 0, 500)
+      scene = new THREE.Scene()
+      renderer = new THREE.WebGLRenderer({
+        alpha: false,
+        antialias: true
+      })
+      renderer.setSize(_width, _height)
+      renderer.shadowMap.enabled = true
+      document.body.appendChild(renderer.domElement)
+
+      ambitLight = new THREE.AmbientLight(0xffffff, .2)
+      light = new THREE.PointLight(0xffffff, 2, 200)
+      light.position.set(80, 50, 80)
+      scene.add(ambitLight)
+      scene.add(light)
+      stone = new Stone()
+      scene.add(stone.mesh)
+      controls = new THREE.OrbitControls(camera, renderer.domElement)
+      loop()
+    }
+
+    function loop() {
+      stone.star.rotation.y += 0.005
+      renderer.render(scene, camera)
+      requestAnimationFrame(loop)
+    }
+
+    var Stone = function() {
+      this.mesh = new THREE.Object3D()
+      var s = 20
+      var noise = 0.9
+      var size = s + Math.random() * s
+      var geom = new THREE.IcosahedronGeometry(size, 1)
+
+      for (var i = 0, l = geom.vertices.length; i < l; i++) {
+        geom.vertices[i].x += size * -0.25 + Math.random() * size * 0.5
+        geom.vertices[i].y += size * -0.25 + Math.random() * size * 0.5
+      }
+      this.star = new THREE.Mesh(geom, stoneMaterial)
+      this.mesh.add(this.star)
+      this.mesh.rotation.z = Math.PI * 27 / 180
+    }
+    init()
+
+    function resize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+
+    window.addEventListener("resize", resize);
+  </script>
+</body>
+
+</html>
