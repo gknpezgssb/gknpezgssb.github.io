@@ -4,7 +4,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <script src="../../utils/three.js"></script>
   <script src="../../utils/orbitControls.js"></script>
   <script src="../../utils/resize.js"></script>
@@ -14,6 +13,8 @@
 
 <body>
   <script>
+    var _width = window.innerWidth
+    var _height = window.innerHeight
     var fov = 50
     var aspect = _width / _height
     var near = 1
