@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=400, user-scalable=no"/>
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <script src="../../utils/three.js"></script>
   <script src="../../utils/orbitControls.js"></script>
@@ -25,18 +25,18 @@
     var controls
     var ambitLight, light
     var saturnRing, saturn, ringA, ringB
-    var saturnTexture,saturnMaterial,stoneTexture,stoneMaterial
+    var saturnTexture, saturnMaterial, stoneTexture, stoneMaterial
     // 土星环A
     var saturnRingA = {
       minRadius: 35,
       maxRadius: 45,
-      particles: 2000
+      particles: 1000
     }
     // 土星环B
     var saturnRingB = {
       minRadius: 48,
       maxRadius: 55,
-      particles: 2000,
+      particles: 1000,
     }
     // 木星贴图
     saturnTexture = THREE.ImageUtils.loadTexture('../image/saturn.jpg', {}, function() {
@@ -53,7 +53,7 @@
     stoneMaterial = new THREE.MeshLambertMaterial({
       map: stoneTexture
     })
-
+    // 初始化函数
     function init() {
       camera = new THREE.PerspectiveCamera(fov, aspect, near, far)
       camera.position.set(0, 0, 80)
@@ -88,8 +88,8 @@
     }
 
     var Saturn = function() {
-      this.ringA = new THREE.Mesh()
-      this.ringB = new THREE.Mesh()
+      this.ringA = new THREE.Object3D()
+      this.ringB = new THREE.Object3D()
       this.mesh = new THREE.Object3D()
       this.ringA.nParticles = 0
       var geometry = new THREE.SphereGeometry(30, 60, 60)
@@ -103,10 +103,12 @@
       this.saturnRing(saturnRingB, this.ringB)
     }
     Saturn.prototype.saturnRing = function(objRing, ring) {
+      var minRadius = objRing.minRadius
+      var maxRadius = objRing.maxRadius
       var angle = Math.PI * 2 / objRing.particles
       for (var i = 0; i < objRing.particles; i++) {
         var stone = new Stone()
-        var radius = objRing.minRadius + Math.random() * (objRing.maxRadius - objRing.minRadius)
+        var radius = minRadius + Math.random() * (maxRadius - minRadius)
         stone.mesh.position.set(radius * Math.cos(angle * i), .5 + Math.random() * -1, radius * Math.sin(angle * i))
         ring.add(stone.mesh)
       }
