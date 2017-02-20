@@ -29,14 +29,14 @@
     // 土星环A
     var saturnRingA = {
       minRadius: 35,
-      maxRadius: 45,
-      particles: 1500
+      maxRadius: 40,
+      particles: 2000
     }
     // 土星环B
     var saturnRingB = {
-      minRadius: 48,
-      maxRadius: 55,
-      particles: 1500,
+      minRadius: 42,
+      maxRadius: 48,
+      particles: 2000,
     }
     // 木星贴图
     saturnTexture = THREE.ImageUtils.loadTexture('../image/saturn.jpg', {}, function() {
@@ -135,7 +135,6 @@
       this.mesh = new THREE.Mesh(geom, stoneMaterial)
       this.mesh.receiveShadow = true
       this.mesh.castShadow = true
-      this.mesh.userData.po = this
     }
 
     function getNumberInNormalDistribution(mean, std_dev) {
