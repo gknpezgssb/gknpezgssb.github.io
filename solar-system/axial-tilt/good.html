@@ -74,7 +74,6 @@
     var Planet = function() {
       this.mesh = new THREE.Object3D()
       var geom = new THREE.SphereGeometry(30, 30, 30)
-
       this.sphere = new THREE.Mesh(geom, earthMaterial)
       this.mesh.add(this.sphere)
       this.mesh.rotation.z = Math.PI * 40 / 180

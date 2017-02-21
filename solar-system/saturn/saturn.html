@@ -3,12 +3,12 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=400, user-scalable=no"/>
+  <meta name="viewport" content="width=400, user-scalable=no" />
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <script src="../../utils/three.js"></script>
   <script src="../../utils/orbitControls.js"></script>
   <script src="../../utils/resize.js"></script>
-  <title>Saturn</title>
+  <title>土星模型</title>
   <link rel="stylesheet" href="../style/style.css">
 </head>
 
@@ -67,8 +67,17 @@
       document.body.appendChild(renderer.domElement)
 
       ambitLight = new THREE.AmbientLight(0xffffff, .2)
-      light = new THREE.PointLight(0xffffff, 2, 200)
+      light = new THREE.DirectionalLight(0xffffff, 1.2)
       light.position.set(80, 50, 80)
+      light.castShadow = true
+      light.shadow.camera.left = -400
+      light.shadow.camera.right = 400
+      light.shadow.camera.top = 400
+      light.shadow.camera.bottom = -400
+      light.shadow.camera.near = 1
+      light.shadow.camera.far = 1000
+      light.shadow.mapSize.width = 2048
+      light.shadow.mapSize.height = 2048
       scene.add(ambitLight)
       scene.add(light)
       saturn = new Saturn()
@@ -101,6 +110,7 @@
       this.mesh.rotation.z = Math.PI * 27 / 180
       this.saturnRing(saturnRingA, this.ringA)
       this.saturnRing(saturnRingB, this.ringB)
+      this.star.castShadow = true
     }
     Saturn.prototype.saturnRing = function(objRing, ring) {
       var minRadius = objRing.minRadius
@@ -127,12 +137,14 @@
       var geom = new THREE.IcosahedronGeometry(random, 1)
 
       for (var i = 0, l = geom.vertices.length; i < l; i++) {
-        geom.vertices[i].x += random * -0.25 + Math.random() * random * 0.5
-        geom.vertices[i].y += random * -0.25 + Math.random() * random * 0.5
-        //   geom.vertices[i].z += size * -0.25 + Math.random() * size * 0.5
+        geom.vertices[i].x += random * (Math.random() * 0.5 - 0.25)
+        geom.vertices[i].y += random * (Math.random() * 0.5 - 0.25)
+        //   geom.vertices[i].z += random * (Math.random() * 0.5 - 0.25)
       }
 
       this.mesh = new THREE.Mesh(geom, stoneMaterial)
+      this.mesh.castShadow = true
+      this.mesh.receiveShadow = true
       this.mesh.receiveShadow = true
       this.mesh.castShadow = true
     }
