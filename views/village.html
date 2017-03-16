@@ -73,7 +73,7 @@
       awaitingSmokeParticles = [],
       pineRadius = .6,
       pineSize = 1,
-      cloudSize = 1
+      cloudSize = .5
     // 颜色
     var color = {
       ground: 0x85613e,
@@ -578,12 +578,13 @@
         metalness: .1,
         shading: THREE.FlatShading,
       })
-      for (var j = 0; j < 3; j++) {
+      for (var j = 0; j < pi;) {
         var mesh = new THREE.Mesh(geom, mat)
         makeShadow(mesh)
-        var s = j === 0 ? 1 : Math.random() * .3 + .5
-        mesh.scale.set(s, s, s)
-        mesh.position.set(cloudSize * 1.5 * Math.cos(pi / 6 * j), 0, cloudSize * 1.5 * Math.sin(-pi / 6 * j))
+        mesh.position.x = .7 * j * Math.cos(.5 * j) + Math.random() * .8
+        mesh.position.z = .7 * j * Math.sin(.5 * j) + Math.random() * .8
+        mesh.position.y = j * -.1 + Math.random() * .8
+        j = j + pi / 6
         this.add(mesh)
       }
     }
