@@ -140,7 +140,7 @@
     // 创建光源
     function createLights() {
       // 环境光
-      ambientLight = new THREE.AmbientLight(0xffe8d8, 0.6)
+      ambientLight = new THREE.HemisphereLight(0xffe8d8, 0.6)
       // 主光
       mainLight = new THREE.DirectionalLight(0xffe8d8, .8)
       mainLight.position.set(-50, 40, -40)
