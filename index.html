@@ -1,12 +1,331 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title>Document</title>
+  <title>shader:热成像</title>
+  <style>
+    #canvas {
+      background-color: #5f9ea0;
+    }
+
+    .none {
+      display: none;
+    }
+
+    #pic-container {
+      transform: scale(.9);
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #control {
+      width: 18%;
+      position: absolute;
+      top: 0;
+      right: 0px;
+      transform: translateX(97%);
+      background-color: #ffffff;
+      padding: 10px;
+      border: 10px solid #666;
+      transition: all .5s ease;
+    }
+
+    .bg {
+      margin-right: 15px;
+    }
+
+    #control:hover {
+      transform: translateX(0);
+    }
+
+    input[type='checkbox']:checked+div {
+      display: block;
+    }
+
+    input[type='checkbox']+div {
+      display: none;
+    }
+  </style>
+  <script id="vertex-shader-2d" type="no-script">
+    attribute vec2 a_vert_position;
+    attribute vec2 a_uv_coordinate;
+    varying vec2 uv;
+    void main () {
+      vec3 position = vec3 (a_vert_position, 1.0);
+      uv = a_uv_coordinate;
+      gl_Position = vec4 (position, 1.0);
+    } 
+  </script>
+  <script id="fragment-shader-2d" type="no-script">
+    precision mediump float;
+    /* 
+     变量申明
+    */
+    varying vec2 uv;
+    uniform sampler2D u_texture0;
+    uniform sampler2D u_texture1;
+    uniform float u_r;
+    uniform float u_g;
+    uniform float u_b;
+    uniform float u_blurIntensity;
+    uniform float u_negativeAmount;
+    uniform float u_colorRampLuminosity;
+    uniform float u_glowAmount;
+    uniform vec3 u_glowColor;
+    /* 
+     工具函数
+    */
+    float Blur_Gauss (float bhqp, float x) {
+      return exp (-(x * x) / (2.0 * bhqp * bhqp));
+    }
+    vec4 Blur (vec2 uv, sampler2D source, float Intensity) {
+      const int iterations = 16;
+      int halfIterations = iterations / 2;
+      float sigmaX = 0.1 + Intensity * 0.5;
+      float sigmaY = sigmaX;
+      float total = 0.0;
+      vec4 ret = vec4 (0., 0., 0., 0.);
+      float step = 0.00390625;
+      for (int iy = 0; iy < iterations; ++iy) {
+        float fy = Blur_Gauss (sigmaY, float (iy - halfIterations));
+        float offsety = float (iy - halfIterations) * step;
+        for (int ix = 0; ix < iterations; ++ix) {
+          float fx = Blur_Gauss (sigmaX, float (ix - halfIterations));
+          float offsetx = float (ix - halfIterations) * step;
+          total += fx * fy;
+          vec4 a = texture2D (source, uv + vec2 (offsetx, offsety));
+          ret += a * fx * fy;
+        }
+      }
+      return ret / total;
+    }
+    void main () {
+      vec4 color = texture2D (u_texture0, uv);   
+       color = Blur (uv, u_texture0, u_blurIntensity);
+       color.rgb = abs(u_negativeAmount - color.rgb);
+      float luminance = 0.;
+      luminance = dot (vec3 (u_r, u_g, u_b), color.rgb);
+      luminance += u_colorRampLuminosity;
+      color.rgb = texture2D (u_texture1, vec2 ( luminance, .0)).rgb;
+      vec4 emission = color;
+      emission.rgb *= u_glowAmount * u_glowColor;
+      color.rgb += emission.rgb;
+      gl_FragColor =color;
+    }
+  </script>
+  <script>
+    function hexToRgb(hex) {
+      return new Float32Array([
+        parseInt('0x' + hex.slice(1, 3)) / 255,
+        parseInt('0x' + hex.slice(3, 5)) / 255,
+        parseInt('0x' + hex.slice(5, 7)) / 255
+      ])
+    }
+  </script>
 </head>
+
 <body>
-  hello
+  <div id="pic-container">
+    <img id="texture0" src="./hollowknight.jpeg" class="bg" />
+    <img id="texture1" src="./palette-thermall.png" class="none" />
+    <canvas id="canvas" width="640" height="640" style="width: 640px; height: 640px;"></canvas>
+  </div>
+  <div id="control none">
+    <input type="checkbox"> 发光
+    <div>
+      <div class="label">
+        <span>颜色</span>
+        <input type="color" value="#ffffff" id="glow-color">
+        <br>
+        <span>强度</span>
+        <input type="range" value=".5" max="2" min="0" step="0.01" id="glow-amount">
+      </div>
+    </div>
+    <hr>
+    <input type="checkbox"> 模糊
+    <div>
+      <span>强度</span>
+      <input type="range" value="2.7" min="0" max="30" step=".001" id="blur-intensity">
+    </div>
+    <hr>
+    <input type="checkbox"> 负片
+    <div>
+      比例<br>
+      <input type="range" value="10" min="0" max="1" step="0.01" id="negative-amount">
+    </div>
+    <hr>
+    <input type="checkbox"> colorRamp
+    <div>
+      <span>强度偏移</span>
+      <br>
+      <input type="range" value="-0.027" min="-1" max="1" step="0.0005" id="color-ramp-luminosity">
+      <br>
+      色像
+      <br>
+      r:<input type="range" value=".5" min="0" max="1" step="0.01" id="r">
+      <br>
+      g: <input type="range" value=".5" min="0" max="1" step="0.01" id="g">
+      <br>
+      b: <input type="range" value=".5" min="0" max="1" step="0.01" id="b">
+    </div>
+  </div>
+  <script>
+    var blurIntensityNode = document.querySelector('#blur-intensity');
+    var negAmountNode = document.querySelector('#negative-amount');
+    var glowColorNode = document.querySelector('#glow-color');
+    var glowAmountNode = document.querySelector("#glow-amount");
+    var colorRampNode = document.querySelector("#color-ramp-luminosity");
+    var rNode = document.querySelector('#r');
+    var gNode = document.querySelector('#g');
+    var bNode = document.querySelector('#b');
+    var bgNode = document.querySelector(".bg");
+    var canvas = document.querySelector("#canvas");
+    window.onload = function () {
+      loop();
+    }
+    function loop() {
+      var gl = canvas.getContext("webgl");
+      if (!gl) {
+        console.log('WebGL not supported, falling back on experimental-webgl');
+        gl = canvas.getContext('experimental-webgl');
+      }
+      if (!gl) {
+        alert('Your browser does not support WebGL');
+      }
+      gl.clearColor(1.0, 1.0, 1.0, 1.0);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      var vertexShader = gl.createShader(gl.VERTEX_SHADER);
+      var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+      var vertexShaderText = document.querySelector("#vertex-shader-2d").text;
+      var fragmentShaderText = document.querySelector("#fragment-shader-2d").text;
+      gl.shaderSource(vertexShader, vertexShaderText);
+      gl.shaderSource(fragmentShader, fragmentShaderText);
+      gl.compileShader(vertexShader);
+      if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
+        console.error('ERROR compiling vertex shader!', gl.getShaderInfoLog(vertexShader));
+        return;
+      }
+      gl.compileShader(fragmentShader);
+      if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
+        console.error('ERROR compiling fragment shader!', gl.getShaderInfoLog(fragmentShader));
+        return;
+      }
+      var program = gl.createProgram();
+      gl.attachShader(program, vertexShader);
+      gl.attachShader(program, fragmentShader);
+      gl.linkProgram(program);
+      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+        console.error('ERROR linking program!', gl.getProgramInfoLog(program));
+        return;
+      }
+      gl.validateProgram(program);
+      if (!gl.getProgramParameter(program, gl.VALIDATE_STATUS)) {
+        console.error('ERROR validating program!', gl.getProgramInfoLog(program));
+        return;
+      }
+      gl.useProgram(program);
+      var positionData = [
+        -1, 1,
+        1, 1,
+        -1, -1,
+        -1, -1,
+        1, 1,
+        1, -1,
+      ];
+      var uvData = [
+        0.0, 0.0,
+        1.0, 0.0,
+        0.0, 1.0,
+        0.0, 1.0,
+        1.0, 0.0,
+        1.0, 1.0,
+      ];
+      var positionBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positionData), gl.STATIC_DRAW);
+      var a_vert_position = gl.getAttribLocation(program, 'a_vert_position');
+      gl.vertexAttribPointer(
+        a_vert_position,
+        2,
+        gl.FLOAT,
+        gl.FALSE,
+        0,
+        0
+      );
+      gl.enableVertexAttribArray(a_vert_position);
+      var a_uv_coordinate = gl.getAttribLocation(program, 'a_uv_coordinate');
+      var uvBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uvData), gl.STATIC_DRAW);
+      gl.vertexAttribPointer(
+        a_uv_coordinate,
+        2,
+        gl.FLOAT,
+        gl.FALSE,
+        0,
+        0
+      );
+      gl.enableVertexAttribArray(a_uv_coordinate);
+      var textures = [];
+      textures.push(createTexture("texture0"));
+      textures.push(createTexture("texture1", true));
+      var u_texture0Location = gl.getUniformLocation(program, "u_texture0");
+      var u_texture1Location = gl.getUniformLocation(program, "u_texture1");
+      gl.uniform1i(u_texture0Location, 0); 
+      gl.uniform1i(u_texture1Location, 1);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, textures[0]);
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, textures[1]);
+      function createTexture(id, isLinear = false) {
+        var val = gl.LINEAR;
+        if (isLinear) {
+          val = gl.NEAREST
+        }
+        var imgNode = document.querySelector('#' + id);
+        var textureBuffer = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, textureBuffer);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, val);  
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, val);  
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); 
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); 
+        gl.texImage2D(
+          gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA,
+          gl.UNSIGNED_BYTE, imgNode
+        );
+        return textureBuffer
+      }
+      var u_r = gl.getUniformLocation(program, "u_r");
+      var u_g = gl.getUniformLocation(program, "u_g");
+      var u_b = gl.getUniformLocation(program, "u_b");
+      var u_colorRampLuminosity = gl.getUniformLocation(program, "u_colorRampLuminosity");
+      var u_time = gl.getUniformLocation(program, "u_time");
+      var u_blurIntensity = gl.getUniformLocation(program, "u_blurIntensity");
+      var u_glowColor = gl.getUniformLocation(program, "u_glowColor");
+      var u_negativeAmount = gl.getUniformLocation(program, "u_negativeAmount");
+      var u_glowAmount = gl.getUniformLocation(program, "u_glowAmount");
+      function loop() {
+        gl.clearColor(1.0, 1.0, 1.0, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        gl.uniform1f(u_blurIntensity, blurIntensityNode.value);
+        gl.uniform1f(u_negativeAmount, negAmountNode.value);
+        gl.uniform3fv(u_glowColor, hexToRgb(glowColorNode.value));
+        gl.uniform1f(u_glowAmount, glowAmountNode.value);
+        gl.uniform1f(u_colorRampLuminosity, colorRampNode.value);
+        gl.uniform1f(u_r, rNode.value);
+        gl.uniform1f(u_g, gNode.value);
+        gl.uniform1f(u_b, bNode.value);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+        requestAnimationFrame(loop);
+      }
+      loop();
+    }
+  </script>
 </body>
+
 </html>
