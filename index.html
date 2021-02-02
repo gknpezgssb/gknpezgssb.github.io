@@ -25,7 +25,7 @@
 
     #control {
       width: 18%;
-      visibility: hidden;
+      /* visibility: hidden; */
       position: absolute;
       top: 0;
       right: 0px;
@@ -78,6 +78,7 @@
     uniform float u_colorRampLuminosity;
     uniform float u_glowAmount;
     uniform vec3 u_glowColor;
+    uniform float u_time;
     /* 
      工具函数
     */
@@ -111,7 +112,8 @@
        color.rgb = abs(u_negativeAmount - color.rgb);
       float luminance = 0.;
       luminance = dot (vec3 (u_r, u_g, u_b), color.rgb);
-      luminance += u_colorRampLuminosity;
+      float colorRampLuminosity = fract((u_time))*1.157 -0.238;
+      luminance += colorRampLuminosity;
       color.rgb = texture2D (u_texture1, vec2 ( luminance, .0)).rgb;
       vec4 emission = color;
       emission.rgb *= u_glowAmount * u_glowColor;
@@ -176,6 +178,7 @@
     </div>
   </div>
   <script>
+    var timmer = 0;
     var blurIntensityNode = document.querySelector('#blur-intensity');
     var negAmountNode = document.querySelector('#negative-amount');
     var glowColorNode = document.querySelector('#glow-color');
@@ -310,7 +313,9 @@
       var u_glowColor = gl.getUniformLocation(program, "u_glowColor");
       var u_negativeAmount = gl.getUniformLocation(program, "u_negativeAmount");
       var u_glowAmount = gl.getUniformLocation(program, "u_glowAmount");
+      var u_time = gl.getUniformLocation(program, "u_time");
       function loop() {
+        timmer += 0.002;
         gl.clearColor(1.0, 1.0, 1.0, 1.0);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         gl.uniform1f(u_blurIntensity, blurIntensityNode.value);
@@ -321,6 +326,7 @@
         gl.uniform1f(u_r, rNode.value);
         gl.uniform1f(u_g, gNode.value);
         gl.uniform1f(u_b, bNode.value);
+        gl.uniform1f(u_time, timmer);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
         requestAnimationFrame(loop);
       }
